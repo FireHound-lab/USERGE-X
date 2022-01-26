@@ -50,9 +50,7 @@ _INIT_LK = asyncio.Lock()
 async def _update_u_cht(r_m: RawMessage) -> ChatMember:
     if r_m.chat.id not in {**_U_AD_CHT, **_U_NM_CHT}:
         user = await r_m.chat.get_member(_U_ID)
-        user.can_all = None
-        if user.status == "creator":
-            user.can_all = True
+        user.can_all = True if user.status == "creator" else None
         if user.status in ("creator", "administrator"):
             _U_AD_CHT[r_m.chat.id] = user
         else:
@@ -169,9 +167,8 @@ async def _bot_is_present(r_c: Union['_client.Userge', '_client.UsergeBot'],
             except PeerIdInvalid:
                 pass
             _TASK_2_START_TO = time.time()
-    else:
-        if r_m.chat.id not in _B_CMN_CHT:
-            _B_CMN_CHT.append(r_m.chat.id)
+    elif r_m.chat.id not in _B_CMN_CHT:
+        _B_CMN_CHT.append(r_m.chat.id)
     return r_m.chat.id in _B_CMN_CHT
 
 
@@ -291,23 +288,26 @@ class RawDecorator(RawClient):
                             if isinstance(flt, types.raw.Command):
                                 await _raise("`required permisson [pin_messages]`")
                             return
-                if RawClient.DUAL_MODE:
-                    if (flt.check_client
-                            or (r_m.from_user and r_m.from_user.id in Config.SUDO_USERS)):
-                        cond = True
-                        async with await _get_lock(str(flt)):
-                            if flt.only_admins:
-                                cond = cond and await _both_are_admins(r_c, r_m)
-                            if flt.check_perm:
-                                cond = cond and await _both_have_perm(flt, r_c, r_m)
-                            if cond:
-                                if Config.USE_USER_FOR_CLIENT_CHECKS:
-                                    # pylint: disable=protected-access
-                                    if isinstance(r_c, _client.UsergeBot):
-                                        return
-                                elif await _bot_is_present(r_c, r_m):
-                                    if isinstance(r_c, _client.Userge):
-                                        return
+                if RawClient.DUAL_MODE and (
+                    (
+                        flt.check_client
+                        or (r_m.from_user and r_m.from_user.id in Config.SUDO_USERS)
+                    )
+                ):
+                    cond = True
+                    async with await _get_lock(str(flt)):
+                        if flt.only_admins:
+                            cond = cond and await _both_are_admins(r_c, r_m)
+                        if flt.check_perm:
+                            cond = cond and await _both_have_perm(flt, r_c, r_m)
+                        if cond and (
+                            Config.USE_USER_FOR_CLIENT_CHECKS
+                            and isinstance(r_c, _client.UsergeBot)
+                            or not Config.USE_USER_FOR_CLIENT_CHECKS
+                            and await _bot_is_present(r_c, r_m)
+                            and isinstance(r_c, _client.Userge)
+                        ):
+                            return
                 if flt.check_downpath and not os.path.isdir(Config.DOWN_PATH):
                     os.makedirs(Config.DOWN_PATH)
                 try:

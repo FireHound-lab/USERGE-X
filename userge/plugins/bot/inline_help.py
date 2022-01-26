@@ -79,7 +79,7 @@ if userge.has_bot:
             if len(b) == 3:  # no. of columns
                 btn.append(b)
                 b = []
-        if len(b) != 0:
+        if b:
             btn.append(b)  # buttons in the last row
         return btn
 

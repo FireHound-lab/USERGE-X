@@ -44,8 +44,7 @@ async def yamlify(message: Message):
     json_file = json.loads(msg)
     yaml_ify = yaml.dump(convert(json_file), allow_unicode=True)
     regex = r"(\s+|)(?:- _:|_:)[\s]"
-    result = re.sub(regex, " ", yaml_ify, re.MULTILINE)
-    if result:
+    if result := re.sub(regex, " ", yaml_ify, re.MULTILINE):
         await message.edit_or_send_as_file(
             text=f"```{result[1:]}```", filename="yaml.txt", caption="Too Large"
         )

@@ -211,14 +211,11 @@ if Config.SPOTIFY_CLIENT_ID and Config.SPOTIFY_CLIENT_SECRET:
                 SP_DATABASE.save_spam(which, False)
                 # we return True so we can test against it and if it this function returns, we can send a fitting message
                 return True
-        # this is if True is inserted, so if spam = True, so if something went wrong
-        else:
-            # if it was normal before, we proceed
-            if not SP_DATABASE.return_spam(which):
-                # we save that it is not normal now
-                SP_DATABASE.save_spam(which, True)
-                # we return True so we can send a message
-                return True
+        elif not SP_DATABASE.return_spam(which):
+            # we save that it is not normal now
+            SP_DATABASE.save_spam(which, True)
+            # we return True so we can send a message
+            return True
         # if True wasn't returned before, we can return False now so our test fails and we dont send a message
         return False
 

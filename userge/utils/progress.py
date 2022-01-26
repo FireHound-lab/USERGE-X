@@ -71,10 +71,8 @@ async def progress(
                 )
             ),
             "".join(
-                (
-                    userge.Config.UNFINISHED_PROGRESS_STR
-                    for i in range(20 - floor(percentage / 5))
-                )
+                userge.Config.UNFINISHED_PROGRESS_STR
+                for _ in range(20 - floor(percentage / 5))
             ),
             round(percentage, 2),
             humanbytes(current),
@@ -82,6 +80,7 @@ async def progress(
             humanbytes(speed),
             time_to_completion or "0 s",
         )
+
 
         try:
             await message.try_to_edit(progress_str)

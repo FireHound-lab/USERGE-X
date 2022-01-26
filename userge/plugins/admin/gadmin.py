@@ -473,15 +473,13 @@ async def zombie_clean(message: Message):
         message.chat.id, message.from_user.id
     )
     flags = message.flags
-    rm_delaccs = "-c" in flags
-    can_clean = check_user.status in ("administrator", "creator")
-    if rm_delaccs:
-        del_users = 0
-        del_admins = 0
-        del_total = 0
-        del_stats = r"`Zero zombie accounts found in this chat... WOOHOO group is clean.. \^o^/`"
-        if can_clean:
+    del_stats = r"`Zero zombie accounts found in this chat... WOOHOO group is clean.. \^o^/`"
+    del_users = 0
+    if rm_delaccs := "-c" in flags:
+        if can_clean := check_user.status in ("administrator", "creator"):
             await message.edit("`Hang on!! cleaning zombie accounts from this chat..`")
+            del_admins = 0
+            del_total = 0
             async for member in message.client.iter_chat_members(chat_id):
                 if member.user.is_deleted:
                     try:
@@ -515,8 +513,6 @@ async def zombie_clean(message: Message):
                 r"`i don't have proper permission to do that! (* ￣︿￣)`", del_in=5
             )
     else:
-        del_users = 0
-        del_stats = r"`Zero zombie accounts found in this chat... WOOHOO group is clean.. \^o^/`"
         await message.edit("`🔎 Searching for zombie accounts in this chat..`")
         async for member in message.client.iter_chat_members(chat_id):
             if member.user.is_deleted:
@@ -559,12 +555,10 @@ async def pin_msgs(message: Message):
     """ pin & unpin message in groups """
     chat_id = message.chat.id
     flags = message.flags
-    disable_notification = False
-    if "-s" in flags:
-        disable_notification = True
+    disable_notification = "-s" in flags
     unpin_pinned = "-u" in flags
-    if unpin_pinned:
-        try:
+    try:
+        if unpin_pinned:
             if message.reply_to_message:
                 await message.client.unpin_chat_message(
                     chat_id, message.reply_to_message.message_id
@@ -573,26 +567,19 @@ async def pin_msgs(message: Message):
                 await message.client.unpin_all_chat_messages(chat_id)
             await message.delete()
             await CHANNEL.log(f"#UNPIN\n\nCHAT: `{message.chat.title}` (`{chat_id}`)")
-        except Exception as e_f:
-            await message.edit(
-                r"`something went wrong! (⊙_⊙;)`"
-                "\n`do .help pin for more info..`\n\n"
-                f"**ERROR:** `{e_f}`"
-            )
-    else:
-        try:
+        else:
             message_id = message.reply_to_message.message_id
             await message.client.pin_chat_message(
                 chat_id, message_id, disable_notification=disable_notification
             )
             await message.delete()
             await CHANNEL.log(f"#PIN\n\nCHAT: `{message.chat.title}` (`{chat_id}`)")
-        except Exception as e_f:
-            await message.edit(
-                r"`something went wrong! (⊙_⊙;)`"
-                "\n`do .help pin for more info..`\n\n"
-                f"**ERROR:** `{e_f}`"
-            )
+    except Exception as e_f:
+        await message.edit(
+            r"`something went wrong! (⊙_⊙;)`"
+            "\n`do .help pin for more info..`\n\n"
+            f"**ERROR:** `{e_f}`"
+        )
 
 
 @userge.on_cmd(
@@ -611,11 +598,10 @@ async def pin_msgs(message: Message):
 )
 async def chatpic_func(message: Message):
     """ change chat photo """
-    chat_id = message.chat.id
     flags = message.flags
-    gpic_set = "-s" in flags
     gpic_del = "-d" in flags
-    if gpic_set:
+    chat_id = message.chat.id
+    if gpic_set := "-s" in flags:
         if message.reply_to_message.photo:
             try:
                 img_id = message.reply_to_message.photo.file_id

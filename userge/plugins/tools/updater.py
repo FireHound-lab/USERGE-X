@@ -33,20 +33,17 @@ async def check_update(message: Message):
     await message.edit("`Checking for updates, please wait....`")
     flags = list(message.flags)
     pull_from_repo = False
-    push_to_heroku = False
-    branch = "alpha"
     if "pull" in flags:
         pull_from_repo = True
         flags.remove("pull")
+    push_to_heroku = False
     if "push" in flags:
         if not Config.HEROKU_APP:
             await message.err("HEROKU APP : could not be found !")
             return
         push_to_heroku = True
         flags.remove("push")
-    if len(flags) == 1:
-        branch = flags[0]
-
+    branch = flags[0] if len(flags) == 1 else "alpha"
     repo = Repo()
     if branch not in repo.branches:
         await message.err(f"invalid branch name : {branch}")
@@ -67,8 +64,8 @@ async def check_update(message: Message):
         else:
             await message.edit(f"**USERGE-X is up-to-date with [{branch}]**", del_in=5)
         return
-    if pull_from_repo:
-        if out:
+    if out:
+        if pull_from_repo:
             await message.edit(f"`New update found for [{branch}], Now pulling...`")
             await _pull_from_repo(repo, branch)
             await CHANNEL.log(
@@ -81,20 +78,21 @@ async def check_update(message: Message):
                     del_in=3,
                 )
                 asyncio.get_event_loop().create_task(userge.restart(True))
-        elif push_to_heroku:
+    elif push_to_heroku:
+        if pull_from_repo:
             await _pull_from_repo(repo, branch)
-        else:
-            active = repo.active_branch.name
-            if active == branch:
-                await message.err(f"already in [{branch}]!")
-                return
-            await message.edit(
-                f"`Moving HEAD from [{active}] >>> [{branch}] ...`", parse_mode="md"
-            )
-            await _pull_from_repo(repo, branch)
-            await CHANNEL.log(f"`Moved HEAD from [{active}] >>> [{branch}] !`")
-            await message.edit("`Now restarting... Wait for a while!`", del_in=3)
-            asyncio.get_event_loop().create_task(userge.restart())
+    else:
+        active = repo.active_branch.name
+        if active == branch:
+            await message.err(f"already in [{branch}]!")
+            return
+        await message.edit(
+            f"`Moving HEAD from [{active}] >>> [{branch}] ...`", parse_mode="md"
+        )
+        await _pull_from_repo(repo, branch)
+        await CHANNEL.log(f"`Moved HEAD from [{active}] >>> [{branch}] !`")
+        await message.edit("`Now restarting... Wait for a while!`", del_in=3)
+        asyncio.get_event_loop().create_task(userge.restart())
     if push_to_heroku:
         await _push_to_heroku(message, repo, branch)
 
@@ -102,11 +100,11 @@ async def check_update(message: Message):
 def _get_updates(repo: Repo, branch: str) -> str:
     repo.remote(Config.UPSTREAM_REMOTE).fetch(branch)
     upst = Config.UPSTREAM_REPO.rstrip("/")
-    out = ""
     upst = Config.UPSTREAM_REPO.rstrip("/")
-    for i in repo.iter_commits(f"HEAD..{Config.UPSTREAM_REMOTE}/{branch}"):
-        out += f"🔨 **#{i.count()}** : [{i.summary}]({upst}/commit/{i}) 👷 __{i.author}__\n\n"
-    return out
+    return "".join(
+        f"🔨 **#{i.count()}** : [{i.summary}]({upst}/commit/{i}) 👷 __{i.author}__\n\n"
+        for i in repo.iter_commits(f"HEAD..{Config.UPSTREAM_REMOTE}/{branch}")
+    )
 
 
 async def _pull_from_repo(repo: Repo, branch: str) -> None:

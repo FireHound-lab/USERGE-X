@@ -69,10 +69,8 @@ async def inline_progress(
                 )
             ),
             "".join(
-                (
-                    userge.Config.UNFINISHED_PROGRESS_STR
-                    for i in range(20 - floor(percentage / 5))
-                )
+                userge.Config.UNFINISHED_PROGRESS_STR
+                for _ in range(20 - floor(percentage / 5))
             ),
             round(percentage, 2),
             humanbytes(current),
@@ -80,6 +78,7 @@ async def inline_progress(
             humanbytes(speed),
             time_to_completion or "0 s",
         )
+
 
         if edit_type == "text":
             await xbot.edit_inline_text(inline_id, text=progress_str)

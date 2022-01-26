@@ -317,10 +317,7 @@ if userge.has_bot:
     @userge.bot.on_callback_query(filters.regex(pattern=r"^chgclnt$"))
     @check_owner
     async def callback_chgclnt(callback_query: CallbackQuery):
-        if Config.USE_USER_FOR_CLIENT_CHECKS:
-            Config.USE_USER_FOR_CLIENT_CHECKS = False
-        else:
-            Config.USE_USER_FOR_CLIENT_CHECKS = True
+        Config.USE_USER_FOR_CLIENT_CHECKS = not Config.USE_USER_FOR_CLIENT_CHECKS
         await SAVED_SETTINGS.update_one(
             {"_id": "CURRENT_CLIENT"},
             {"$set": {"is_user": Config.USE_USER_FOR_CLIENT_CHECKS}},
@@ -351,8 +348,7 @@ if userge.has_bot:
             text=text,
             reply_markup=InlineKeyboardMarkup(buttons),
         )
-        errors = response.get("description", None)
-        if errors:
+        if errors := response.get("description", None):
             if "not modified:" in errors:
                 raise MessageNotModified
             if "MESSAGE_ID_INVALID" in errors:

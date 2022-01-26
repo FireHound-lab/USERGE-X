@@ -211,9 +211,8 @@ async def get_note(message: Message) -> None:
     if not mid:
         return
     if can_access or is_global:
-        replied = message.reply_to_message
         user_id = message.from_user.id
-        if replied:
+        if replied := message.reply_to_message:
             reply_to_message_id = replied.message_id
             if replied.from_user:
                 user_id = replied.from_user.id
